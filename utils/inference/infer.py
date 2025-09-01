@@ -14,6 +14,9 @@ import math
 import os
 import sys
 
+sys.path.append('/content/fairseq')
+print(sys.path)
+
 import editdistance
 import numpy as np
 import torch
@@ -226,6 +229,8 @@ def main(args, task=None, model_state=None):
         task.load_dataset(args.gen_subset)
     else:
         logger.info("| loading model(s) from {}".format(args.path))
+        from fairseq.data.dictionary import Dictionary
+        torch.serialization.add_safe_globals([Dictionary])
         models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
             utils.split_paths(args.path),
             arg_overrides=ast.literal_eval(args.model_overrides),

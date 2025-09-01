@@ -3,8 +3,8 @@ parentdir="$(dirname "$dir")"
 parentdir="$(dirname "$parentdir")"
 
 ### Values to change -start ###
-inference_data_name="hindi"
-wav_path=""
+inference_data_name="nepali"
+wav_path="/content/OpenSLR/dataset/test/"
 prep_scripts="../../utils/prep_scripts"
 destination_path=$parentdir'/data/inference/'${inference_data_name}
 ### Values to change end ###
@@ -15,7 +15,7 @@ analysis_scripts="../../utils/analysis"
 
 mkdir -p ${destination_path}
 
-python ${prep_scripts}/manifest.py ${wav_path} --dest ${destination_path} --ext wav --train-name test --valid-percent 0 --jobs -1
+python ${prep_scripts}/manifest.py ${wav_path} --dest ${destination_path} --ext mp3 --train-name test --valid-percent 0 --jobs -1
 echo "Manifest Creation Done"
 
 python ${prep_scripts}/labels.py --jobs 64 --tsv ${destination_path}/test.tsv --output-dir ${destination_path} --output-name test --txt-dir ${txt_path}

@@ -5,9 +5,9 @@ parentdir="$(dirname "$parentdir")"
 
 ### Values to change -start ###
 
-train_wav_path="path to wav files"
-valid_wav_path=""
-make_valid_from_train=1 # 0 if validation data is in a different folder and 1 if validation data is to be extracted from train_wav_path
+train_wav_path="/content/OpenSLR/dataset/train/"
+valid_wav_path="/content/OpenSLR/dataset/valid/"
+make_valid_from_train=0 # 0 if validation data is in a different folder and 1 if validation data is to be extracted from train_wav_path
 valid_percentage=0.1
 
 ### Values to change end ###
@@ -22,7 +22,7 @@ destination_path=$parentdir'/data/finetuning'
 
 if [ "${make_valid_from_train}" = 1 ]; then
 
-    python ${prep_scripts}/manifest.py ${train_wav_path} --dest ${destination_path} --ext wav --train-name ${train_name} --valid-percent ${valid_percentage} --jobs -1
+    python ${prep_scripts}/manifest.py ${train_wav_path} --dest ${destination_path} --train-name ${train_name} --valid-percent ${valid_percentage} --jobs -1
     echo "Manifest Creation Done"
     echo "Valid data extracted from train set"
 
@@ -32,8 +32,8 @@ if [ "${make_valid_from_train}" = 1 ]; then
 
 else 
     valid_percentage=0.0
-    python ${prep_scripts}/manifest.py ${train_wav_path} --dest ${destination_path} --ext wav --train-name ${train_name} --valid-percent ${valid_percentage} --jobs -1
-    python ${prep_scripts}/manifest.py ${valid_wav_path} --dest ${destination_path} --ext wav --train-name ${valid_name} --valid-percent ${valid_percentage} --jobs -1
+    python ${prep_scripts}/manifest.py ${train_wav_path} --dest ${destination_path} --ext mp3 --train-name ${train_name} --valid-percent ${valid_percentage} --jobs -1
+    python ${prep_scripts}/manifest.py ${valid_wav_path} --dest ${destination_path} --ext mp3 --train-name ${valid_name} --valid-percent ${valid_percentage} --jobs -1
     echo "Manifest Creation Done"
 
     python ${prep_scripts}/labels.py --jobs 64 --tsv ${destination_path}/${train_name}.tsv --output-dir ${destination_path} --output-name ${train_name} --txt-dir ${train_wav_path}

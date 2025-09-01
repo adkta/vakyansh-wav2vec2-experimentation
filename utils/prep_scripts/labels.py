@@ -9,7 +9,8 @@ from joblib import Parallel, delayed
 
 
 def get_text(line,root):
-    txt_path = line.split("\t")[0].replace(".wav",".txt").strip() ## implies that the text filename and wav filename should be same
+    file_id = line.split("\t")[0].replace(".wav","").strip() ## implies that the text filename and wav filename should be same
+    #txt_path = transcription.txt
 
     txt_path = os.path.join( root , txt_path )
 
@@ -33,7 +34,22 @@ def main():
     tsv_file=args.tsv
     output_dir=args.output_dir
     output_name=args.output_name
+    transcrip_file = os.path.join( args.txt_dir , 'transcription.txt' )
 
+    #create a wav2trans dictionary
+    wav2trans = dict()
+
+    with open(transcrip_file, 'r') as transcrip:
+        lines = transcrip.read().strip().split('\n')
+        for line in lines:
+            if '\t' in line:
+                file, trans = line.split("\t")
+            else:
+                splitted_line = line.split(" ")
+                file, trans = splitted_line[0], " ".join(splitted_line[1:])
+            wav2trans[file] = trans
+
+        
     with open(tsv_file) as tsv, open(
             os.path.join(output_dir, output_name + ".ltr"), "w",encoding="utf-8"
         ) as ltr_out, open(
@@ -44,11 +60,18 @@ def main():
 
         if not args.txt_dir:
             args.txt_dir = root
-        
-        local_arr = []
 
-        local_arr.extend(Parallel(n_jobs = args.jobs)( delayed(get_text)(line , args.txt_dir) for line in tqdm(tsv)))
-    
+        #wrd file must be the same order as tsv file
+        local_arr = []
+        for line in tqdm(tsv):
+            if '\t' in line:
+                filepath, tot_frames = line.split("\t")
+            else:
+                splitted_line = line.split(" ")
+                filepath, tot_frames = splitted_line[0], " ".join(splitted_line[1:])
+            file_id = os.path.basename(filepath)
+            label = wav2trans[file_id]
+            local_arr.append(label);
         
         formatted_text = []
         for text in local_arr:

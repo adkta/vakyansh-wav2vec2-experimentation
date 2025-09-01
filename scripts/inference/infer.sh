@@ -6,7 +6,7 @@ parentdir="$(dirname "$parentdir")"
 ### Values to change -start ###
 
 w2l_decoder_viterbi=1 # 1 for viterbi, 0 for kenlm
-inference_data_name='toy_english'
+inference_data_name='nepali'
 beam=128 # 128 or 1024
 subset='test'
 
