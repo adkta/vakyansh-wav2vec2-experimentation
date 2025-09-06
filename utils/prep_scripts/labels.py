@@ -7,19 +7,6 @@ import re
 from tqdm import tqdm
 from joblib import Parallel, delayed
 
-
-def get_text(line,root):
-    file_id = line.split("\t")[0].replace(".wav","").strip() ## implies that the text filename and wav filename should be same
-    #txt_path = transcription.txt
-
-    txt_path = os.path.join( root , txt_path )
-
-    text = ''
-    with open(txt_path , mode = "r", encoding="utf-8") as file_local:
-        text = file_local.readline().strip()
-
-    return text
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tsv", type = str, help = "TSV file for which labels need to be generated")
@@ -69,7 +56,7 @@ def main():
             else:
                 splitted_line = line.split(" ")
                 filepath, tot_frames = splitted_line[0], " ".join(splitted_line[1:])
-            file_id = os.path.basename(filepath)
+            file_id = os.path.splitext(os.path.basename(filepath))[0]
             label = wav2trans[file_id]
             local_arr.append(label);
         

@@ -32,8 +32,8 @@ if [ "${make_valid_from_train}" = 1 ]; then
 
 else 
     valid_percentage=0.0
-    python ${prep_scripts}/manifest.py ${train_wav_path} --dest ${destination_path} --ext mp3 --train-name ${train_name} --valid-percent ${valid_percentage} --jobs -1
-    python ${prep_scripts}/manifest.py ${valid_wav_path} --dest ${destination_path} --ext mp3 --train-name ${valid_name} --valid-percent ${valid_percentage} --jobs -1
+    python ${prep_scripts}/manifest.py ${train_wav_path} --dest ${destination_path} --ext mp3,wav,flac --train-name ${train_name} --valid-percent ${valid_percentage} --jobs -1
+    python ${prep_scripts}/manifest.py ${valid_wav_path} --dest ${destination_path} --ext mp3,wav,flac --train-name ${valid_name} --valid-percent ${valid_percentage} --jobs -1
     echo "Manifest Creation Done"
 
     python ${prep_scripts}/labels.py --jobs 64 --tsv ${destination_path}/${train_name}.tsv --output-dir ${destination_path} --output-name ${train_name} --txt-dir ${train_wav_path}

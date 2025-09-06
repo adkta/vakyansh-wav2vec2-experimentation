@@ -15,7 +15,7 @@ analysis_scripts="../../utils/analysis"
 
 mkdir -p ${destination_path}
 
-python ${prep_scripts}/manifest.py ${wav_path} --dest ${destination_path} --ext mp3 --train-name test --valid-percent 0 --jobs -1
+python ${prep_scripts}/manifest.py ${wav_path} --dest ${destination_path} --ext mp3,wav,flac --train-name test --valid-percent 0 --jobs -1
 echo "Manifest Creation Done"
 
 python ${prep_scripts}/labels.py --jobs 64 --tsv ${destination_path}/test.tsv --output-dir ${destination_path} --output-name test --txt-dir ${txt_path}

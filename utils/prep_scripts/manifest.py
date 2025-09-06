@@ -8,6 +8,8 @@ from joblib import Parallel, delayed
 import soundfile
 from random import sample
 from tqdm import tqdm
+from pathlib import Path
+import re
 
 
 def get_parser():
@@ -45,7 +47,8 @@ def get_parser():
 
 def read_file(fname, args, dir_path):
     file_path = os.path.realpath(fname)
-
+    # print(f"Reading file_path: {file_path}")
+    # print(f"Reading fname: {fname}")
     if args.path_must_contain and args.path_must_contain not in file_path:
         pass
 
@@ -64,13 +67,23 @@ def main(args):
     dir_path = os.path.realpath(args.root)
     search_path = os.path.join(dir_path, "**/*." + args.ext)
     #rand = random.Random(args.seed)
+    exts = args.ext.split(',')
+    exts = [ext.strip() for ext in exts]
+    ext_re = r"$|\.".join(exts)
+    ext_re = ext_re.join([r"\.",r"$"])
+    ext_pattern = re.compile(ext_re)
+    dir_path = Path(args.root)
+
 
     random.seed(args.seed)
 
     local_arr = []
 
-    local_arr.extend(Parallel(n_jobs = args.jobs)( delayed(read_file)(fname, args, dir_path) for fname in tqdm(glob.iglob(search_path, recursive=True))))
-        
+    # local_arr.extend(Parallel(n_jobs = args.jobs)( delayed(read_file)(fname, args, dir_path) for fname in tqdm(glob.iglob(search_path, recursive=True))))
+
+    aud_file_gen = (file_path for file_path in dir_path.iterdir() if file_path.is_file() and ext_pattern.search(file_path.name))
+    local_arr.extend(Parallel(n_jobs = args.jobs)( delayed(read_file)(fname, args, dir_path) for fname in tqdm(aud_file_gen)))
+
     #dest = train_f if rand.random() > args.valid_percent else valid_f
     
     valid_samples = sample(local_arr, int(len(local_arr)*float(args.valid_percent)))
