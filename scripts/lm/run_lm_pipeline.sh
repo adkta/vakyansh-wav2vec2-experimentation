@@ -35,7 +35,7 @@ fi
 if [ "$run_generate_lm_vocab" == 1 ]; then
 	printf "\n** Generating kenlm **\n"
 	python ../../utils/lm/generate_lm.py --input_txt ${input_txt_file_path} --output_dir ${output_path} \
-		--top_k ${top_k} --kenlm_bins ${kenlm_bins} \
+		--top_k ${top_k} --kenlm_bins ${kenlm_bins} --discount_fallback \
 		--arpa_order 5 --max_arpa_memory "85%" --arpa_prune "0|0|1" \
 		--binary_a_bits 255 --binary_q_bits 8 --binary_type trie 
 	printf "**Kenlm Generated at : "${output_path}
