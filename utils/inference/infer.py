@@ -357,6 +357,12 @@ def main(args, task=None, model_state=None):
             for i, sample_id in enumerate(sample["id"].tolist()):
                 speaker = None
                 # id = task.dataset(args.gen_subset).ids[int(sample_id)]
+                #########################
+                print('###################################')
+                print('TESTING LABELS')
+                print(post_process(task.dataset(args.gen_subset).labels[int(sample_id)], args.post_process))
+                print('###################################')
+                #########################
                 id = sample_id
                 toks = (
                     sample["target"][i, :]
