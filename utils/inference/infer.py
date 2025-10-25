@@ -14,8 +14,10 @@ import math
 import os
 import sys
 
+print(f"BEFORE APPENDING {sys.path}")
 sys.path.append('/content/fairseq')
-print(sys.path)
+sys.path.append('/content/')
+print(f"AFTER APPENDING {sys.path}")
 
 import editdistance
 import numpy as np
@@ -24,6 +26,11 @@ from fairseq import checkpoint_utils, options, progress_bar, tasks, utils
 from fairseq.data.data_utils import post_process
 from fairseq.logging.meters import StopwatchMeter, TimeMeter
 
+from transliteration.transliterator import TranslitDict
+from transliteration.utils import get_reverse_dict
+from transliteration.examples.disambiguation_examples import disambiguate
+
+import kenlm
 
 logging.basicConfig()
 logging.root.setLevel(logging.INFO)
@@ -114,9 +121,13 @@ def get_dataset_itr(args, task, models):
         data_buffer_size=args.data_buffer_size,
     ).next_epoch_itr(shuffle=False)
 
+def get_pieces_from_text(text: str) -> str:
+    local_list = list( text.replace(" ", "|") )
+    pieces = " ".join(local_list) + ' |'
+    return pieces
 
 def process_predictions(
-    args, hypos, sp, tgt_dict, target_tokens, res_files, speaker, id
+    args, hypos, sp, tgt_dict, target_tokens, res_files, speaker, id, reverse_dict, lang_model
 ):
     for hypo in hypos[: min(len(hypos), args.nbest)]:
         hyp_pieces = tgt_dict.string(hypo["tokens"].int().cpu())
@@ -125,7 +136,10 @@ def process_predictions(
             hyp_words = " ".join(hypo["words"])
         else:
             hyp_words = post_process(hyp_pieces, args.post_process)
-
+        
+        hyp_words = disambiguate(sentence=hyp_words, model = lang_model, reverse_dict = reverse_dict)
+        hyp_pieces = get_pieces_from_text(hyp_words)
+        
         if res_files is not None:
             print(
                 "{} ({}-{})".format(hyp_pieces, speaker, id),
@@ -136,7 +150,8 @@ def process_predictions(
                 file=res_files["hypo.words"],
             )
 
-        tgt_pieces = tgt_dict.string(target_tokens)
+        # tgt_pieces = tgt_dict.string(target_tokens)
+        tgt_pieces = target_tokens
         tgt_words = post_process(tgt_pieces, args.post_process)
 
         if res_files is not None:
@@ -309,6 +324,14 @@ def main(args, task=None, model_state=None):
         if max_source_pos is not None:
             max_source_pos = max_source_pos[0] - 1
 
+    #Reverse-Reduction Dictionary
+    reduc_dict_path = "/content/Nep_Eng_Code-Mixed_Reduct_Dict.json"
+    reverse_dict = get_reverse_dict(dictionary = TranslitDict.load(reduc_dict_path))
+
+    #N-gram Code-mixed Language Model (5-gram)
+    LM = "/content/transcript_out.binary"
+    lang_model = kenlm.LanguageModel(LM)
+
     if args.dump_emissions:
         emissions = {}
     if args.dump_features:
@@ -357,19 +380,14 @@ def main(args, task=None, model_state=None):
             for i, sample_id in enumerate(sample["id"].tolist()):
                 speaker = None
                 # id = task.dataset(args.gen_subset).ids[int(sample_id)]
-                #########################
-                print('###################################')
-                print('TESTING LABELS')
-                print(post_process(task.dataset(args.gen_subset).labels[int(sample_id)], args.post_process))
-                print('###################################')
-                #########################
                 id = sample_id
                 toks = (
                     sample["target"][i, :]
                     if "target_label" not in sample
                     else sample["target_label"][i, :]
                 )
-                target_tokens = utils.strip_pad(toks, tgt_dict.pad()).int().cpu()
+                # target_tokens = utils.strip_pad(toks, tgt_dict.pad()).int().cpu()
+                target_tokens = task.dataset(args.gen_subset).labels[int(sample_id)]
                 # Process top predictions
                 errs, length = process_predictions(
                     args,
@@ -380,6 +398,8 @@ def main(args, task=None, model_state=None):
                     res_files,
                     speaker,
                     id,
+                    reverse_dict,
+                    lang_model
                 )
                 errs_t += errs
                 lengths_t += length
