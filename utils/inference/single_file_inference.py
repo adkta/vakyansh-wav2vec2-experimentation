@@ -5,10 +5,24 @@ import soundfile as sf
 import torch.nn.functional as F
 import itertools as it
 from fairseq import utils
+from fairseq import checkpoint_utils
 from fairseq.models import BaseFairseqModel
 from fairseq.data import Dictionary
 from fairseq.models.wav2vec.wav2vec2_asr import Wav2VecEncoder, Wav2Vec2CtcConfig
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
+
+import kenlm
+import sys
+
+print(f"BEFORE APPENDING {sys.path}")
+sys.path.append('/content/fairseq')
+sys.path.append('/content/')
+print(f"AFTER APPENDING {sys.path}")
+
+from transliteration.transliterator import TranslitDict
+from transliteration.utils import get_reverse_dict
+from transliteration.examples.disambiguation_examples import disambiguate
+
 
 try:
     from flashlight.lib.text.dictionary import create_word_dict, load_words
@@ -316,12 +330,22 @@ def get_results(wav_path,dict_path,generator,use_cuda=False,w2v_path=None,model=
     hyp_pieces = target_dict.string(hypo[0][0]["tokens"].int().cpu())
     text=post_process(hyp_pieces, 'letter')
 
-    return text
+    reduc_dict_path = "/content/Nep_Eng_Code-Mixed_Reduct_Dict.json"
+    reverse_dict = get_reverse_dict(dictionary = TranslitDict.load(reduc_dict_path))
+
+    #N-gram Code-mixed Language Model (5-gram)
+    LM = "/content/transcript_out.binary"
+    lang_model = kenlm.LanguageModel(LM)
+
+    native_text = disambiguate(sentence=text, model = lang_model, reverse_dict = reverse_dict)
+
+    return native_text
 
 
 def load_model(model_path):
-    return torch.load(model_path)#,map_location=torch.device("cuda"))
-
+    # return torch.load(model_path)#,map_location=torch.device("cuda"))
+    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task([model_path])
+    return models[0]
 
 
 def get_args(lexicon_path, lm_path, BEAM=128, LM_WEIGHT=2, WORD_SCORE=-1):
@@ -350,8 +374,10 @@ def parse_transcription(model_path, dict_path, wav_path, cuda, decoder="viterbi"
     
     result = ''
 
+    print(f"MODEL PATH: {model_path}")
     if cuda:
         model = load_model(model_path)
+        print(f"MODEL OBJECT TYPE: {type(model)}")
         model.cuda()
     else:
         model = load_model(model_path)
@@ -376,6 +402,8 @@ if __name__ == "__main__":
     parser.add_argument('-H', '--half', default=False, type=bool, help="Half True or False")
     
     args_local = parser.parse_args()
+
+    torch.serialization.add_safe_globals([Dictionary])
 
     result = parse_transcription(args_local.model, args_local.dict, args_local.wav,  args_local.cuda, args_local.decoder, args_local.lexicon, args_local.lm_path, args_local.half)
     print(result)
