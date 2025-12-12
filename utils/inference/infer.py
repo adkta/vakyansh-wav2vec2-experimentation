@@ -139,7 +139,7 @@ def process_predictions(
         else:
             hyp_words = post_process(hyp_pieces, args.post_process)
 
-        hyp_words = disambiguate(sentence=hyp_words, model = lang_model, reverse_dict = reverse_dict, sym_spell = sym_spell, edit_dist = 1, lang_scoring = False, sep_case_plural = True)
+        hyp_words = disambiguate(sentence=hyp_words, model = lang_model, reverse_dict = reverse_dict, sym_spell = sym_spell, edit_dist = edit_dist, lang_scoring = False, sep_case_plural = True)
         hyp_pieces = get_pieces_from_text(hyp_words)
         
         if res_files is not None:
@@ -331,14 +331,16 @@ def main(args, task=None, model_state=None):
     reverse_dict = get_reverse_dict(dictionary = TranslitDict.load(reduc_dict_path))
 
     #Spell Correction Vocabulary (Vocabulary of reduced words)
-    edit_dist = 1
-    red_voc_count = "/content/red_voc_count.txt"
-    with open(red_voc_count, encoding = 'utf-8', mode = 'w') as o_f:
-        for reduced_wrd in reverse_dict.keys():
-            o_f.write(f"{reduced_wrd} 1\n")
+    edit_dist = 0
+    sym_spell = None
+    # edit_dist = 1
+    # red_voc_count = "/content/red_voc_count.txt"
+    # with open(red_voc_count, encoding = 'utf-8', mode = 'w') as o_f:
+    #     for reduced_wrd in reverse_dict.keys():
+    #         o_f.write(f"{reduced_wrd} 1\n")
     
-    sym_spell = SymSpell(max_dictionary_edit_distance=edit_dist, prefix_length=7)
-    sym_spell.load_dictionary(red_voc_count, term_index=0, count_index=1)
+    # sym_spell = SymSpell(max_dictionary_edit_distance=edit_dist, prefix_length=7)
+    # sym_spell.load_dictionary(red_voc_count, term_index=0, count_index=1)
 
     #N-gram Code-mixed Language Model (5-gram)
     LM = "/content/transcript_out.binary"
