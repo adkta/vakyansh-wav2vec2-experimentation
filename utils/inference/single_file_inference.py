@@ -330,14 +330,27 @@ def get_results(wav_path,dict_path,generator,use_cuda=False,w2v_path=None,model=
     hyp_pieces = target_dict.string(hypo[0][0]["tokens"].int().cpu())
     text=post_process(hyp_pieces, 'letter')
 
+    #Reverse-Reduction Dictionary
     reduc_dict_path = "/content/Nep_Eng_Code-Mixed_Reduct_Dict.json"
     reverse_dict = get_reverse_dict(dictionary = TranslitDict.load(reduc_dict_path))
+
+    #Spell Correction Vocabulary (Vocabulary of reduced words)
+    edit_dist = 0
+    sym_spell = None
+    # edit_dist = 1
+    # red_voc_count = "/content/red_voc_count.txt"
+    # with open(red_voc_count, encoding = 'utf-8', mode = 'w') as o_f:
+    #     for reduced_wrd in reverse_dict.keys():
+    #         o_f.write(f"{reduced_wrd} 1\n")
+
+    # sym_spell = SymSpell(max_dictionary_edit_distance=edit_dist, prefix_length=7)
+    # sym_spell.load_dictionary(red_voc_count, term_index=0, count_index=1)
 
     #N-gram Code-mixed Language Model (5-gram)
     LM = "/content/transcript_out.binary"
     lang_model = kenlm.LanguageModel(LM)
 
-    native_text = disambiguate(sentence=text, model = lang_model, reverse_dict = reverse_dict)
+    native_text = disambiguate(sentence=text, model = lang_model, reverse_dict = reverse_dict, sym_spell = sym_spell, edit_dist = edit_dist, lang_scoring = False, sep_case_plural = True)
 
     return native_text
 
